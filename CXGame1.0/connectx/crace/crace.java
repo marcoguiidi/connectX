@@ -88,6 +88,19 @@ public class crace implements CXPlayer {
 		}
     }
 
+    private int iterativeDeepening(CXBoard B, boolean playerA, int depth) throws TimeoutException{
+        int alpha = -1;
+        int beta = 1;
+        int eval = 0;
+        for (int d = 0; d < depth; d++){
+            if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (97.0 / 100.0)){
+                break;
+            }
+            eval = alphaBeta(B, alpha, beta, playerA, depth);            
+        }
+        return eval;
+    }
+
     public int getBestMove(CXBoard board) throws TimeoutException{
         int alpha = -1;
         int beta = 1;
@@ -98,9 +111,7 @@ public class crace implements CXPlayer {
             checktime();
             CXBoard newBoard = board.copy();
             newBoard.markColumn(move);
-            if (newBoard == board)
-                return bestMove;
-            int value = alphaBeta(newBoard, alpha, beta, myWin == CXGameState.WINP2, maxDepth - 1);
+            int value = iterativeDeepening(newBoard, myWin == CXGameState.WINP2, maxDepth);
             newBoard.unmarkColumn();
             if (value > alpha) {
                 alpha = value;
