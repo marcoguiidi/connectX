@@ -22,7 +22,7 @@ import java.util.concurrent.TimeoutException;
 public class crace implements CXPlayer {
 
     private Random rand;
-    private CXGameState myWin;
+    private CXGameState myWin;      
 	private CXGameState yourWin;
 	private int  TIMEOUT;
 	private long START;
@@ -82,7 +82,7 @@ public class crace implements CXPlayer {
 		}
     }
 
-    public int iterativeDeepening(CXBoard board, int depth){
+    public int iterativeDeepening(CXBoard board, int depth) throws TimeoutException{
         int alpha = -1;
         int beta = 1;
         int eval = 0;
@@ -129,7 +129,8 @@ public class crace implements CXPlayer {
     }
 
     private int alphaBeta(CXBoard board, int alpha, int beta, boolean maximizingPlayer, int depth) throws TimeoutException{
-        checktime();
+        //checktime();
+            
         
         if (depth == 0 || board.gameState() != CXGameState.OPEN) {
             return evaluate(board);
@@ -140,6 +141,9 @@ public class crace implements CXPlayer {
             for (int move : board.getAvailableColumns()) {
                 CXBoard newBoard = board.copy();
                 newBoard.markColumn(move);
+                if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (95.0 / 100.0)){
+                    return evaluate(newBoard);
+                }
                 eval = Math.max (eval, alphaBeta(newBoard, alpha, beta, !maximizingPlayer, depth - 1));
                 newBoard.unmarkColumn();
                 alpha = Math.max(alpha, eval);
@@ -155,6 +159,9 @@ public class crace implements CXPlayer {
             for (int move : board.getAvailableColumns()) {
                 CXBoard newBoard = board.copy();
                 newBoard.markColumn(move);
+                if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (95.0 / 100.0)){
+                    return evaluate(newBoard);
+                }
                 eval = Math.min(eval, alphaBeta(newBoard, alpha, beta, !maximizingPlayer, depth - 1));
                 newBoard.unmarkColumn();
                 beta = Math.min(beta, eval);
