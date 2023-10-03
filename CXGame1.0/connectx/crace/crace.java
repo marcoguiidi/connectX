@@ -26,14 +26,11 @@ public class crace implements CXPlayer {
 	private CXGameState yourWin;
 	private int  TIMEOUT;
 	private long START;
-    private boolean first;
-    private int maxDepth = 15;
 
     /*
      * default empty constructor
      */
     public crace (){
-
     }
 
     public void initPlayer(int M, int N, int K, boolean first, int timeout_in_secs) {
@@ -42,7 +39,6 @@ public class crace implements CXPlayer {
 		myWin   = first ? CXGameState.WINP1 : CXGameState.WINP2;
 		yourWin = first ? CXGameState.WINP2 : CXGameState.WINP1;
 		TIMEOUT = timeout_in_secs;
-        this.first = first;
 	}
 
     /*
@@ -59,6 +55,7 @@ public class crace implements CXPlayer {
 	 *
 	 * Returns the winning column if there is one, otherwise -1
 	 */	
+    /* 
 	private int singleMoveWin(CXBoard B, Integer[] L) throws TimeoutException {
         for(int i : L) {
           checktime(); // Check timeout at every iteration
@@ -70,6 +67,7 @@ public class crace implements CXPlayer {
             return -1;
     
     }
+    */
 
     public int selectColumn(CXBoard B) {
 		START = System.currentTimeMillis(); // Save starting time
@@ -77,15 +75,25 @@ public class crace implements CXPlayer {
 		Integer[] L = B.getAvailableColumns();
         int save = L[rand.nextInt(L.length)]; // Save a random column 
         try {
-			int col = singleMoveWin(B,L);
-			if(col != -1) 
-				return col;
-			else
-				return getBestMove(B);
+			return getBestMove(B);
 		} catch (TimeoutException e) {
 			System.err.println("Timeout!!! Random column selected");
 			return save;
 		}
+    }
+
+    public int iterativeDeepening(CXBoard board, int depth){
+        int alpha = -1;
+        int beta = 1;
+        int eval = 0;
+        for(int d = 0; d <= depth; d++){
+            if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (96.0 / 100.0)){
+                break;
+            }
+            boolean playerA = myWin == CXGameState.WINP1;
+            eval = alphaBeta(board, alpha, beta, playerA, depth);
+        }
+        return eval;
     }
 
     public int getBestMove(CXBoard board) throws TimeoutException{
@@ -98,21 +106,23 @@ public class crace implements CXPlayer {
             checktime();
             CXBoard newBoard = board.copy();
             newBoard.markColumn(move);
-            if (newBoard == board)
-                return bestMove;
-            int value = alphaBeta(newBoard, alpha, beta, myWin == CXGameState.WINP2, maxDepth - 1);
+            int value = iterativeDeepening(newBoard, 20);
             newBoard.unmarkColumn();
-            if (value > alpha) {
+            if (myWin == CXGameState.WINP1 && value >= alpha) {
                 alpha = value;
                 bestMove = move;
             }
-
-            if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (98.0 / 100.0) && value > -1){
-                break;
+            else if (myWin == CXGameState.WINP2 && value <= beta){
+                beta = value;
+                bestMove = move;
             }
 
-            if (value == 1)
+            if (value == (myWin == CXGameState.WINP1 ? 1 : -1))
                 break;   
+
+            if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (95.0 / 100.0)){
+                break;
+            }
         }
         
         return bestMove;
@@ -125,14 +135,13 @@ public class crace implements CXPlayer {
             return evaluate(board);
         }
         
-        if (maximizingPlayer) {
+        else if (maximizingPlayer) {
             int eval = -1;
             for (int move : board.getAvailableColumns()) {
                 CXBoard newBoard = board.copy();
                 newBoard.markColumn(move);
-                eval = Math.max (eval, alphaBeta(newBoard, alpha, beta, false, depth - 1));
+                eval = Math.max (eval, alphaBeta(newBoard, alpha, beta, !maximizingPlayer, depth - 1));
                 newBoard.unmarkColumn();
-
                 alpha = Math.max(alpha, eval);
                 
                 if (beta <= alpha) {
@@ -146,9 +155,8 @@ public class crace implements CXPlayer {
             for (int move : board.getAvailableColumns()) {
                 CXBoard newBoard = board.copy();
                 newBoard.markColumn(move);
-                eval = Math.min(eval, alphaBeta(newBoard, alpha, beta, true, depth - 1));
+                eval = Math.min(eval, alphaBeta(newBoard, alpha, beta, !maximizingPlayer, depth - 1));
                 newBoard.unmarkColumn();
-                
                 beta = Math.min(beta, eval);
                 
                 if (beta <= alpha) {
@@ -157,15 +165,16 @@ public class crace implements CXPlayer {
             }
             return eval;
         }
+        
     }
    
 
     private int evaluate(CXBoard B){
 
-        if (B.gameState() == CXGameState.WINP2){
+        if (B.gameState() == myWin){
             return 1;
         }
-        else if (B.gameState() == CXGameState.WINP1) {
+        else if (B.gameState() == yourWin) {
             return -1;
         }
         else 
