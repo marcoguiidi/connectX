@@ -5,7 +5,7 @@
  */ //  javac -cp ".." *.java */*.java
  /*  
  *   command line execution:
- *      java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L1.L1 connectx.crace.crace -v
+ *      java -cp ".." connectx.CXGame 6 7 4 connectx.crace.crace
  *      
  *      empty package is human play
  */
@@ -16,8 +16,11 @@
 import connectx.CXPlayer;
 import connectx.CXBoard;
 import connectx.CXGameState;
+
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.TimeoutException;
+
 
 
 public class crace implements CXPlayer {
@@ -49,7 +52,7 @@ public class crace implements CXPlayer {
      */
 
     private void checktime() throws TimeoutException {
-		if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (99.0 / 100.0))
+		if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (99.5 / 100.0))
 			throw new TimeoutException();
     }   
 
@@ -72,6 +75,7 @@ public class crace implements CXPlayer {
     }
     */
 
+    /* 
     public int selectColumn(CXBoard B) {
 		START = System.currentTimeMillis(); // Save starting time
 
@@ -99,16 +103,18 @@ public class crace implements CXPlayer {
         return T.eval;  
     }
 
-    public int getBestMove(GTBoard T) throws TimeoutException{
+    private int getBestMove(GTBoard T) throws TimeoutException{
         Integer moves[] = T.board.getAvailableColumns();
         int bestMove = moves[rand.nextInt(moves.length)];
-        int bestEval = (!playerA ? -1 : +1);
+        int ZMoves[] = new int[moves.length];
+        int Zindex = 0;
+        int bestEval = (playerA ? 1 : -1);
         
         for(int move : moves){
             GTBoard c = new GTBoard(T.board.copy());
             c.board.markColumn(move);
             if ((System.currentTimeMillis() - START) / 1000.0 <= TIMEOUT * (96.0 / 100.0)){
-                int value = iterativeDeepening(c, 50);
+                int value = iterativeDeepening(c, 20);
             
             //T.board.unmarkColumn();
                 if (!playerA){
@@ -118,6 +124,7 @@ public class crace implements CXPlayer {
                         }   
                         bestEval = value;
                         bestMove = move;
+                       
                     }
                 }   
                 else{
@@ -129,30 +136,16 @@ public class crace implements CXPlayer {
                         bestMove = move;
                     }
                 }
+                 if (value == 0){
+                    ZMoves[Zindex] = move;
+                    Zindex++;
+                }
             }
         }
+        if (bestEval == 0){
+            return ZMoves[Zindex-1];
+        }
 
-        /*for (int move : moves) {
-            checktime();
-            T.board.markColumn(move);
-            int value = iterativeDeepening(T, 20);
-            T.board.unmarkColumn();
-            if (myWin == CXGameState.WINP1 && value >= T.alpha) {
-                T.alpha = value;
-                bestMove = move;
-            }
-            else if (myWin == CXGameState.WINP2 && value <= T.beta){
-                T.beta = value;
-                bestMove = move;
-            }
-
-            if (value == (myWin == CXGameState.WINP1 ? 1 : -1))
-                break;   
-
-            if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (95.0 / 100.0)){
-                break;
-            }
-        }*/
         
         return bestMove;
     }
@@ -204,6 +197,7 @@ public class crace implements CXPlayer {
         }
         return T.eval;
     }
+    */
    
 
     private int evaluate(CXBoard B){
@@ -218,12 +212,101 @@ public class crace implements CXPlayer {
             return 0;
     }
 
+    public int selectColumn(CXBoard B){
+        START = System.currentTimeMillis(); // Save starting time
+ 
+		return GetBestMove(B, playerA);
+    }
+
+    private int GetBestMove(CXBoard B, boolean maximizingPlayer){
+        Integer[] moves = B.getAvailableColumns();
+
+        couple[] save = new couple[moves.length];
+
+        for(int i = 0; i < moves.length; i++){
+
+            if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (95.0 / 100.0))
+                break;
+            
+            save[i].col = moves[i];
+
+            GTBoard c = new GTBoard(B.copy(), maximizingPlayer);
+            c.board.markColumn(moves[i]);
+            save[i].val = miniMax(c, !maximizingPlayer);
+            if (save[i].val == 1 && maximizingPlayer) {
+                return save[i].col;
+            }
+
+            else if (save[i].val == -1 && !maximizingPlayer) {
+                return save[i].col;
+            }
+        }
+        return retMaxKey(save, maximizingPlayer);
+    }
+
+    private int retMaxKey(couple[] arr, boolean A){
+        if (A){
+            int best = -1;
+            int index = 0;
+            for (int i = 0; i < arr.length; i++){
+                if (arr[i].val > best) {
+                    best = arr[i].val;
+                    index = i;
+                }
+            }
+            return arr[index].col;
+        }
+
+        else{
+            int best = 1;
+            int index = 0;
+            for (int i = 0; i < arr.length; i++){
+                if (arr[i].val < best) {
+                    best = arr[i].val;
+                    index = i;
+                }
+            }
+            return arr[index].col;
+        }
+    }
+
+    private int miniMax(GTBoard T, boolean playerA) {
+
+        if (T.board.getAvailableColumns().length == 0 || T.board.gameState() != CXGameState.OPEN) {
+            T.eval = evaluate(T.board);
+        }
+        else if (playerA) {
+            T.eval = Integer.MIN_VALUE;
+            for (int move : T.board.getAvailableColumns()) {
+
+                if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (98.0 / 100.0)){
+                    T.eval = evaluate(T.board);
+                    break;
+                }
+
+                GTBoard c = new GTBoard(T.board.copy(), playerA);
+                c.board.markColumn(move);
+                T.eval = Math.max(T.eval, miniMax(c, false));
+            }
+        }
+        else{
+            T.eval = Integer.MAX_VALUE;
+            for (int move : T.board.getAvailableColumns()) {
+
+                if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (98.0 / 100.0)){
+                    T.eval = evaluate(T.board);
+                    break;
+                }
+
+                GTBoard c = new GTBoard(T.board.copy(), playerA);
+                c.board.markColumn(move);
+                T.eval = Math.min(T.eval, miniMax(c, false));
+            }
+        }
+        return T.eval;
+    }
+
     public String playerName(){
         return "crace";
     }
-
 }
-
-
-
-

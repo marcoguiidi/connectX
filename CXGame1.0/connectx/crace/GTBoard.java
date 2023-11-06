@@ -13,9 +13,9 @@ public class GTBoard{
     public int beta;
     public CXBoard board;
 
-    public GTBoard(CXBoard b){
+    public GTBoard(CXBoard b, boolean maximizingPlayer){
         this.board = b;
-        eval = 0;
+        eval = (maximizingPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE);
         alpha = -1;
         beta = 1;
     }
