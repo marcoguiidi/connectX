@@ -1,44 +1,37 @@
 package connectx.crace;
+import java.util.Map;
 
-import java.util.Arrays;
-import java.util.Comparator;
 
-public class couple implements Comparable<couple>{
+public class couple<K, V> implements Map.Entry<K, V>{
 
-    int column;
-    int value;
+    private K column;
+    private V value;
 
-    public couple(int column, int value){
-        this.column = column;
-        this.value = value;
-    }
-
-    public int getColumn(){
-        return column;
-    }
-
-    public int getValue(){
-        return value;
-    }
-
-    public void setColumn(int c){
-        column = c;
-    }
-
-    public void setValue(int v){
-        value = v;
+    public couple(K col, V val) {
+        this.value = val;
+        this.column = col;
     }
 
     @Override
-    public int compareTo(couple otherCouple) {
-        if (this.getValue() > otherCouple.getValue()) {
-            return 1;
-        }
+    public K getKey() {
+        return column;
+    }
 
-        else if (this.getValue() < otherCouple.getValue()) {
-            return -1;
-        }
+    @Override
+    public V getValue() {
+        return value;
+    }
 
-        else return 0;
-    }   
+    @Override
+    public V setValue(V val) {
+        V oldValue = this.value;
+        this.value = val;
+        return oldValue;
+    }
+
+    public K setCol(K col){
+        K oldCol = this.column;
+        this.column = col;
+        return oldCol;
+    }
 }

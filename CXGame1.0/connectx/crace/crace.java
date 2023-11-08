@@ -17,11 +17,16 @@ import connectx.CXPlayer;
 import connectx.CXBoard;
 import connectx.CXGameState;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Collections;
 import java.util.Random;
 import java.util.concurrent.TimeoutException;
+
+import javax.xml.crypto.dsig.keyinfo.KeyValue;
+
 
 
 
@@ -202,19 +207,20 @@ public class crace implements CXPlayer {
     */
    
 
-    private int evaluate(CXBoard B){
+    private Integer evaluate(CXBoard B){
 
         if (B.gameState() == CXGameState.WINP1){
-            return 1;
+            return Integer.valueOf(1);
         }
         else if (B.gameState() == CXGameState.WINP2) {
-            return -1;
+            return -Integer.valueOf(-1);
         }
         else 
-            return 0;
+            return Integer.valueOf(0);
     }
 
     public int selectColumn(CXBoard B){
+        
         START = System.currentTimeMillis(); // Save starting time
         
 		return GetBestMove(B, playerA);
@@ -223,39 +229,47 @@ public class crace implements CXPlayer {
     private int GetBestMove(CXBoard B, boolean maximizingPlayer) {
         Integer[] moves = B.getAvailableColumns();
 
-        couple[] save = new couple[moves.length];
-        int sindex= 0;
-        for(int i : moves){
+        //Integer[] values = new Integer[moves.length];
+        List<couple<Integer, Integer>> save = new ArrayList<>();
+        for(int move : moves){
 
             if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (95.0 / 100.0))
                 break;
 
-            save[sindex].setColumn(i);
             
             GTBoard c = new GTBoard(B.copy(), maximizingPlayer);
-            c.board.markColumn(save[sindex].getColumn());
-            save[sindex].setValue(alphaBeta(c, -1, +1, !maximizingPlayer));
-            if (save[sindex].getValue() == 1 && maximizingPlayer) {
-                return save[sindex].getColumn();
+            c.board.markColumn(move);
+            //c.board.markColumn(i);
+            save.add(new couple<>(move, alphaBeta(c, -1, +1, !maximizingPlayer, c.board.numOfFreeCells() + 1)));
+            if (save.getLast().getValue() == 1 && maximizingPlayer) {
+                return save.getLast().getKey();
             }
 
-            else if (save[sindex].getValue() == -1 && !maximizingPlayer) {
-                return save[sindex].getColumn();
+            else if (save.getLast().getValue() == -1 && !maximizingPlayer) {
+                return save.getLast().getKey();
             }
-            sindex++;
         }
-        Arrays.sort(save, Collections.reverseOrder());
-        return save[0].getColumn();
+        Collections.sort(save, new Comparator<couple<Integer, Integer>>() {
+            @Override
+            public int compare(couple<Integer, Integer> kv1, couple<Integer, Integer> kv2) {
+                // Inverti l'ordine delle chiavi per l'ordinamento decrescente
+                return kv2.getValue().compareTo(kv1.getValue());
+            }
+        });
+
+        return save.getFirst().getKey();
+        //return moves[retMaxIndex(values, maximizingPlayer, sindex)];
+        
     }
 
-    /*private int retMaxIndex(couple[] arr, boolean A){
+    private int retMaxIndex(Integer[] arr, boolean A, int len){
 
         if (A){
-            int best = -1;
+            Integer best = -1;
             int index = 0;
-            for (int i = 0; i < arr.length; i++){
-                if (arr[i].value > best) {
-                    best = arr[i].value;
+            for (int i = 0; i < len; i++){
+                if (arr[i] >= best) {
+                    best = arr[i];
                     index = i;
                 }
             }
@@ -263,10 +277,10 @@ public class crace implements CXPlayer {
         }
 
         else{
-            int best = 1;
+            Integer best = 1;
             int index = 0;
-            for (int i = 0; i < arr.length; i++){
-                if (arr[i] < best) {
+            for (int i = 0; i < len; i++){
+                if (arr[i] <= best) {
                     best = arr[i];
                     index = i;
                 }
@@ -274,8 +288,6 @@ public class crace implements CXPlayer {
             return index;
         }
     }
-*/
-   
 
     private int miniMax(GTBoard T, boolean playerA) {
 
@@ -313,9 +325,9 @@ public class crace implements CXPlayer {
         return T.eval;
     }
 
-    private int alphaBeta(GTBoard T, int alpha, int beta, boolean maximizingPlayer) {
+    private Integer alphaBeta(GTBoard T, int alpha, int beta, boolean maximizingPlayer, int depth) {
 
-        if (T.board.gameState() != CXGameState.OPEN || T.board.getAvailableColumns().length == 0) {
+        if (T.board.gameState() != CXGameState.OPEN || T.board.getAvailableColumns().length == 0 || depth == 0) {
             T.eval = evaluate(T.board);
         }
         
@@ -336,7 +348,7 @@ public class crace implements CXPlayer {
                     break;
                 }
                 
-                T.eval = Math.max (T.eval, alphaBeta(c, alpha, beta, false));
+                T.eval = Math.max (T.eval, alphaBeta(c, alpha, beta, false, depth - 1));
                 alpha = Math.max(alpha, T.eval);
                 
                 if (beta <= alpha) {
@@ -360,7 +372,7 @@ public class crace implements CXPlayer {
                     T.eval = evaluate(T.board);
                     break;
                 }
-                T.eval = Math.min(T.eval, alphaBeta(c, alpha, beta, true));
+                T.eval = Math.min(T.eval, alphaBeta(c, alpha, beta, true, depth - 1));
                 beta = Math.min(beta, T.eval);
                 
                 if (beta <= alpha) {
