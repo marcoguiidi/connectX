@@ -15,6 +15,8 @@
 
 import connectx.CXPlayer;
 import connectx.CXBoard;
+import connectx.CXCell;
+import connectx.CXCellState;
 import connectx.CXGameState;
 
 import java.security.KeyStore.Entry;
@@ -44,6 +46,7 @@ public class crace implements CXPlayer {
 	private int  TIMEOUT;
 	private long START;
     private boolean playerA;
+    private CXCellState player1;
 
     /*
      * default empty constructor
@@ -56,6 +59,7 @@ public class crace implements CXPlayer {
 		rand    = new Random(System.currentTimeMillis());
 		myWin   = first ? CXGameState.WINP1 : CXGameState.WINP2;
 		yourWin = first ? CXGameState.WINP2 : CXGameState.WINP1;
+        player1 = first ? CXCellState.P1 : CXCellState.P2;
 		TIMEOUT = timeout_in_secs;
         playerA = first;
 	}
@@ -69,11 +73,6 @@ public class crace implements CXPlayer {
 			throw new TimeoutException();
     }   
 
-    /*
-	 * Check if we can win in a single move
-	 *
-	 * Returns the winning column if there is one, otherwise -1
-	 */	
     /* 
 	private int singleMoveWin(CXBoard B, Integer[] L) throws TimeoutException {
         for(int i : L) {
@@ -219,11 +218,13 @@ public class crace implements CXPlayer {
 
         int d;
 
-        System.err.print("\n\n running ...");
+        System.out.print("\n\n running ...\n");
         for( d = 0; d <= depth; d++){
             if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (95.0 / 100.0)){
                 break;
             }
+            long beg = System.currentTimeMillis();
+
               // create a list with couple (move, eval)
 
             Integer[] moves = T.board.getAvailableColumns();
@@ -234,32 +235,50 @@ public class crace implements CXPlayer {
                     break;
 
                 CXBoard cpy = T.board.copy();
-                GTBoard c = new GTBoard(cpy, maximizingPlayer);
+                GTBoard c = new GTBoard(cpy, playerA);
                 cpy.markColumn(move);
 
+                int pre = (maximizingPlayer ? preScan(T.board, move) : -preScan(T.board, move));
                 save.put(move, alphaBeta(c, Integer.MIN_VALUE, Integer.MAX_VALUE, !maximizingPlayer, d));
 
+                
 
-                if (save.get(move) == 1 && maximizingPlayer) {
-                    return move;
+                if (save.get(move) == Integer.MAX_VALUE) {
+                    if (maximizingPlayer) {
+                        System.out.print("\nwinning in ");
+                        System.out.print(d);
+                        System.out.print(" moves");
+                        return move;
+                    }
                 }
 
-                else if (save.get(move) == -1 && !maximizingPlayer) {
-                    return move;
+                else if (save.get(move) == Integer.MIN_VALUE) {
+                    if (!maximizingPlayer) {
+                        System.out.print("\nwinning in ");
+                        System.out.print(d);
+                        System.out.print(" moves");
+                        return move;
+                    }
                 }
+
+                else {
+                    save.put(move, save.get(move) + pre);
+                }
+
             }
+            System.out.print("\ndepth: ");
+            System.out.print(d);
+            System.out.print(", time: ");
+            System.out.print(System.currentTimeMillis() - beg);
         }
-            /*Collections.sort(save, new Comparator<couple<Integer, Integer>>() {
-                @Override
-                public int compare(couple<Integer, Integer> kv1, couple<Integer, Integer> kv2) {
-                    return kv2.getValue().compareTo(kv1.getValue());
-                }
-            });*/
-
-        System.err.print("\n MOVE");
-        System.err.print(save);
-        System.err.print("   depth: ");
-        System.err.print(d);        
+        System.out.print("\n");
+        System.out.print(save);
+        /*
+        System.out.print("\n MOVE");
+        System.out.print(save);
+        System.out.print("   depth: ");
+        System.out.print(d); 
+        */       
 
         List<Map.Entry<Integer, Integer>> lista = new ArrayList<>(save.entrySet());
 
@@ -274,18 +293,148 @@ public class crace implements CXPlayer {
          
         return retValue;
             //return (maximizingPlayer ? x.entrySet().getKey() : save.getLast().getKey());
-    }   
+    } 
 
-    private Integer evaluate(CXBoard B){
+    private int preScan(CXBoard B, int move){
+        int val = 0;
 
+        if (move == (B.N)/2) {
+            val += 5;
+        }
+        else if ((move <= (B.N)/2 + 1) && (move >= (B.N)/2 - 1)) {
+            val += 2;
+        }
+
+        int around = countAround(B, move);
+        val += around;
+
+        return val;
+    }  
+
+    private int countAround(CXBoard B, int move){
+        int count = 0;
+        CXBoard cpy = B.copy();
+        cpy.markColumn(move);
+
+        CXCell cell = cpy.getLastMove();
+
+        /*
+        System.out.print("\nrow: ");
+        System.out.print(cell.i);
+        System.out.print(", col: ");
+        System.out.print(cell.j);
+        */
+
+        if (cell.i > 0 && cell.i < B.M - 1){
+            for (int i = cell.i - 1; i <= cell.i + 1; i++){
+                if (cell.j > 0 && cell.j < B.N - 1){
+                    for (int j = cell.j - 1; j <= cell.j + 1; j++){
+                        if (B.cellState(i, j) == player1) {
+                            count++;
+                        }
+                    }
+                }
+                else if (cell.j > 0){
+                    for (int j = cell.j - 1; j <= cell.j; j++){
+                        if (B.cellState(i, j) == player1) {
+                            count++;
+                        }
+                    }
+                }
+                else if (cell.j < B.N - 1) {
+                    for (int j = cell.j; j <= cell.j + 1; j++){
+                        if (B.cellState(i, j) == player1) {
+                            count++;
+                        }
+                    }
+                }
+            }
+        }
+        else if (cell.i > 0){
+            for (int i = cell.i - 1; i <= cell.i; i++){
+                if (cell.j > 0 && cell.j < B.N - 1){
+                    for (int j = cell.j - 1; j <= cell.j + 1; j++){
+                        if (B.cellState(i, j) == player1) {
+                            count++;
+                        }
+                    }
+                }
+                else if (cell.j > 0){
+                    for (int j = cell.j - 1; j <= cell.j; j++){
+                        if (B.cellState(i, j) == player1) {
+                            count++;
+                        }
+                    }
+                }
+                else if (cell.j < B.N - 1) {
+                    for (int j = cell.j; j <= cell.j + 1; j++){
+                        if (B.cellState(i, j) == player1) {
+                            count++;
+                        }
+                    }
+                }
+            }
+        }
+        else if (cell.i < B.M - 1){
+            for (int i = cell.i; i <= cell.i + 1; i++){
+                if (cell.j > 0 && cell.j < B.N - 1){
+                    for (int j = cell.j - 1; j <= cell.j + 1; j++){
+                        if (B.cellState(i, j) == player1) {
+                            count++;
+                        }
+                    }
+                }
+                else if (cell.j > 0){
+                    for (int j = cell.j - 1; j <= cell.j; j++){
+                        if (B.cellState(i, j) == player1) {
+                            count++;
+                        }
+                    }
+                }
+                else if (cell.j < B.N - 1) {
+                    for (int j = cell.j; j <= cell.j + 1; j++){
+                        if (B.cellState(i, j) == player1) {
+                            count++;
+                        }
+                    }
+                }
+            }
+        }
+        return count;
+    }
+
+    private int evaluate(CXBoard B){
+        int eval = 0;
         if (B.gameState() == CXGameState.WINP1){
-            return Integer.valueOf(1);
+            return Integer.MAX_VALUE;
         }
         else if (B.gameState() == CXGameState.WINP2) {
-            return Integer.valueOf(-1);
+            return Integer.MIN_VALUE;
         }
-        else 
-            return Integer.valueOf(0);
+        else{
+            eval += countCentral(B);
+        }
+         return eval;   
+    }
+
+    private int countCentral(CXBoard B){
+        int count = 0;
+        for (int j = (B.N)/2 - 1; j < (B.N)/2 + j; j++){
+            if (B.cellState(0, j) == CXCellState.FREE) {
+                break;
+            }
+            for (int i = 0; i < B.M - 1; i++){
+                  if (B.cellState(i, j) == player1) {
+                     count++;
+                  } 
+                  /*
+                  else if (B.cellState(i, j) != CXCellState.FREE) {
+                     count--;   
+                  }
+                  */
+            }
+        }
+        return count;
     }
 
     public int selectColumn(CXBoard B){
@@ -413,7 +562,7 @@ public class crace implements CXPlayer {
         }
         
         else if (maximizingPlayer) {
-            T.eval = -1;
+            T.eval = Integer.MIN_VALUE;
             for (int move : T.board.getAvailableColumns()) {
 
                 if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (98.0 / 100.0)){
@@ -440,7 +589,7 @@ public class crace implements CXPlayer {
             }
         }
         else {
-            T.eval = +1;
+            T.eval = Integer.MAX_VALUE;
             for (int move : T.board.getAvailableColumns()) {
 
                 if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (98.0 / 100.0)){
