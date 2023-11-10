@@ -32,6 +32,7 @@ import java.util.concurrent.TimeoutException;
 
 public class crace implements CXPlayer {
 
+    private Map<tabDepth, Integer> hashTable;  // vengono salvate le tabelle associate alla profondità
     private Random rand;
     private CXGameState myWin;      
 	private CXGameState yourWin;
@@ -57,10 +58,14 @@ public class crace implements CXPlayer {
 		TIMEOUT = timeout_in_secs;
         playerA = first;
         evaluated = false;
+        hashTable = new HashMap<>();
 	}
    
+    /*
+     * iterative deepening algorithm
+     */
     private int iterativeDeepening(GTBoard T, int depth, boolean maximizingPlayer){
-        Map<Integer, Integer> save = new HashMap<>();
+        Map<Integer, valDepth> save = new HashMap<>();
         Integer[] a = T.board.getAvailableColumns();
         int retValue = a[rand.nextInt(a.length)];
         
@@ -78,8 +83,9 @@ public class crace implements CXPlayer {
             Integer[] moves = T.board.getAvailableColumns();
         
             for(int move : moves){
+
                 boolean closed = false;
-                if (d > 1 && (save.get(move) == Integer.MIN_VALUE || save.get(move) == Integer.MAX_VALUE)) {
+                if (d > 1 && (save.get(move).val == Integer.MIN_VALUE || save.get(move).val == Integer.MAX_VALUE)) {
                     closed = true;              
                 }
                 
@@ -87,40 +93,46 @@ public class crace implements CXPlayer {
                     break;
 
                 if (!closed){
+
                     CXBoard cpy = T.board.copy();
                     GTBoard c = new GTBoard(cpy, playerA);
                     cpy.markColumn(move);
 
-                    int val = alphaBeta(c, Integer.MIN_VALUE, Integer.MAX_VALUE, !maximizingPlayer, d);
+                    tabDepth x = new tabDepth(c, d);
+                    if (hashTable.get(x) == null) { // evita di rivalutare tabelle già valutate
+                        int val = alphaBeta(c, Integer.MIN_VALUE, Integer.MAX_VALUE, !maximizingPlayer, d);
 
-                    save.put(move, val);
-                //System.out.print(save.get(move));
-                //System.out.print(" ");
+                        save.put(move, new valDepth(val, d));
+
+                        hashTable.put(x, val);  
+                        //System.out.print(save.get(move));
+                        //System.out.print(" ");
                 
-                    if (save.get(move) == Integer.MAX_VALUE) {
-                        if (maximizingPlayer) {
-                            System.out.print("\nwinning in ");
-                            System.out.print(d/2);
-                            System.out.print(" moves\n");
-                            return move;
+                        if (save.get(move).val == Integer.MAX_VALUE) {
+                            if (maximizingPlayer) {
+                                System.out.print("\nwinning in ");
+                                System.out.print(d/2);
+                                System.out.print(" moves\n");
+                                return move;
+                            }
                         }
-                    }
 
-                    else if (save.get(move) == Integer.MIN_VALUE) {
-                        if (!maximizingPlayer) {
-                            System.out.print("\nwinning in ");
-                            System.out.print(d/2);
-                            System.out.print(" moves\n");
-                            return move;
+                        else if (save.get(move).val == Integer.MIN_VALUE) {
+                            if (!maximizingPlayer) {
+                                System.out.print("\nwinning in ");
+                                System.out.print(d/2);
+                                System.out.print(" moves\n");
+                                return move;
+                            }
                         }
-                    }
 
-                    else{
-                        int pre =  preScan(T.board, move);
-                        if (maximizingPlayer) {
-                            save.put(move, save.get(move) + pre);
+                        else{
+                            int pre =  preScan(T.board, move);
+                            if (maximizingPlayer) {
+                                save.put(move, new valDepth((save.get(move).val + pre), d));
+                            }
+                            else save.put(move, new valDepth((save.get(move).val - pre), d));
                         }
-                        else save.put(move, save.get(move) - pre);
                     }
                 }
             }
@@ -132,18 +144,18 @@ public class crace implements CXPlayer {
             //System.out.print(save);
         }
         
-        System.out.print("\n");
-        System.out.print(save);
+        System.out.print("\ndone!");
+        //System.out.print(save);
         
              
 
-        List<Map.Entry<Integer, Integer>> lista = new ArrayList<>(save.entrySet());
+        List<Map.Entry<Integer, valDepth>> lista = new ArrayList<>(save.entrySet());
 
         if(maximizingPlayer) Collections.sort(lista, (entry1, entry2) -> entry2.getValue().compareTo(entry1.getValue()));
 
         else Collections.sort(lista, (entry1, entry2) -> entry1.getValue().compareTo(entry2.getValue()));
 
-        for (Map.Entry<Integer, Integer> entry : lista) {
+        for (Map.Entry<Integer, valDepth> entry : lista) {
             retValue = entry.getKey();
             break;
         }
@@ -151,6 +163,9 @@ public class crace implements CXPlayer {
         return retValue;
     } 
 
+    /*
+     * evaluation of the move before played
+     */
     private int preScan(CXBoard B, int move){
         int val = 0;
 
@@ -162,11 +177,15 @@ public class crace implements CXPlayer {
         }
 
         int around = countAround(B, move);
+        int inLine = countInLine(B, move);
         val += around;
-
+        val += inLine;
         return val;
     }  
 
+    /*
+     * count how many cells are mine in range 1
+     */
     private int countAround(CXBoard B, int move){
         int count = 0;
         CXBoard cpy = B.copy();
@@ -259,6 +278,9 @@ public class crace implements CXPlayer {
         return count;
     }
 
+    /*
+     * evaluate the current board
+     */
     private int evaluate(GTBoard B){
         int eval = 0;
         if (B.board.gameState() == CXGameState.WINP1){
@@ -278,6 +300,9 @@ public class crace implements CXPlayer {
         return eval;   
     }
 
+    /*
+     * count how many central cells are mine
+     */
     private int countCentral(CXBoard B){
         int count = 0;
         for (int j = (B.N)/2 - 1; j < (B.N)/2 + 1; j++){
@@ -298,6 +323,79 @@ public class crace implements CXPlayer {
         return count;
     }
 
+    /*
+     * count how many cells in line i have before the move
+     */
+    private int countInLine(CXBoard B, int move){
+        int count = 0;
+
+        //count += countInRow(B, move);
+        count += countInCol(B, move);
+        count += countInPdiag(B, move);
+        count += countInSDiag(B, move);
+
+        return count;
+    }
+
+    /*
+     * count inLine ausiliar functions
+     */
+    private int countInSDiag(CXBoard b, int move) {
+        return 0;
+    }
+
+    private int countInPdiag(CXBoard b, int move) {
+        return 0;
+    }
+
+    private int countInCol(CXBoard b, int move) {
+        int count = 0;
+
+        int i = b.M - 1;
+        while (b.cellState(i, move) != CXCellState.FREE && i >= 0) {
+            i--;
+        }
+        if (i == 0) {
+            return 0;
+        }
+        else{
+            i++;
+            boolean cont = true;
+            while (cont && i < b.M) {
+                if (b.cellState(i, move) != myplayer) {
+                    cont = false;
+                }
+                else count++;
+                i++;
+            }
+        }
+        return count;
+    }
+
+    /*private int countInRow(CXBoard b, int move) {
+        int count = 0;
+
+        while (b.cellState(i, move) != CXCellState.FREE && i >= 0) {
+            i--;
+        }
+        if (i == 0) {
+            return 0;
+        }
+        else{
+            boolean cont = true;
+            while (cont && i < b.M) {
+                if (b.cellState(i + 1, move) != myplayer) {
+                    cont = false;
+                }
+                else count++;
+            }
+        }
+        return count;
+    }*/
+
+    /*
+     * return the selected column
+     */
     public int selectColumn(CXBoard B){
         
         START = System.currentTimeMillis(); // Save starting time
@@ -305,12 +403,18 @@ public class crace implements CXPlayer {
 		return GetBestMove(B, playerA);
     }
 
+    /*
+     * return the best move calculated
+     */
     private int GetBestMove(CXBoard B, boolean maximizingPlayer) {
 
         GTBoard c = new GTBoard(B, maximizingPlayer);
         return iterativeDeepening(c, B.numOfFreeCells(), maximizingPlayer);
     }
      
+    /*
+     * alphaBeta pruning algorithm
+     */
     private Integer alphaBeta(GTBoard T, int alpha, int beta, boolean maximizingPlayer, int depth) {
         if (T.board.gameState() != CXGameState.OPEN || T.board.getAvailableColumns().length == 0 || depth == 0) {
             return evaluate(T);
@@ -373,6 +477,9 @@ public class crace implements CXPlayer {
         }
     }
 
+    /*
+     * return player name
+     */
     public String playerName(){
         return "crace";
     }
