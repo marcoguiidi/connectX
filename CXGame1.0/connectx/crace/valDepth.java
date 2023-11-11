@@ -18,15 +18,14 @@ public class valDepth implements Comparable<valDepth>{
             return -1;
         }
         else{
-            if (this.depth > o.depth) {
+            /*if (this.depth > o.depth) {
                 return 1;
             }
             else if (this.depth < o.depth) {
                 return -1;
             }
-            else return 0;
+            else*/ 
+            return 0;
         }
     }
-
-    
 }

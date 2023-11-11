@@ -99,7 +99,7 @@ public class crace implements CXPlayer {
                     cpy.markColumn(move);
 
                     tabDepth x = new tabDepth(c, d);
-                    if (hashTable.get(x) == null) { // evita di rivalutare tabelle già valutate
+                    //if (hashTable.get(x) == null) { // evita di rivalutare tabelle già valutate
                         int val = alphaBeta(c, Integer.MIN_VALUE, Integer.MAX_VALUE, !maximizingPlayer, d);
 
                         save.put(move, new valDepth(val, d));
@@ -133,7 +133,7 @@ public class crace implements CXPlayer {
                             }
                             else save.put(move, new valDepth((save.get(move).val - pre), d));
                         }
-                    }
+                    //}
                 }
             }
             System.out.print("\ndepth: ");
@@ -145,9 +145,6 @@ public class crace implements CXPlayer {
         }
         
         System.out.print("\ndone!");
-        //System.out.print(save);
-        
-             
 
         List<Map.Entry<Integer, valDepth>> lista = new ArrayList<>(save.entrySet());
 
@@ -155,13 +152,42 @@ public class crace implements CXPlayer {
 
         else Collections.sort(lista, (entry1, entry2) -> entry1.getValue().compareTo(entry2.getValue()));
 
-        for (Map.Entry<Integer, valDepth> entry : lista) {
-            retValue = entry.getKey();
-            break;
+        int moves = lista.get(0).getValue().depth;
+        retValue = lista.get(0).getKey();
+        int i = 0;
+
+        /*
+         * cicli while che perdono in più mosse possibili, quando ogni mossa porta alla sconfitta
+         */
+        if (retValue == Integer.MAX_VALUE && !maximizingPlayer) {
+            
+            while (lista.get(i).getValue().val == Integer.MAX_VALUE && i < lista.size()){ 
+                
+                if (lista.get(i).getValue().depth > moves){
+                    moves = lista.get(i).getValue().depth;
+                    retValue = lista.get(i).getKey();
+                }
+                i++;
+            }  
+        } 
+
+        else if (retValue == Integer.MIN_VALUE && maximizingPlayer) {
+            
+            while (lista.get(i).getValue().val == Integer.MIN_VALUE && i < lista.size()){
+                
+                if (lista.get(i).getValue().depth > moves){
+                    moves = lista.get(i).getValue().depth;
+                    retValue = lista.get(i).getKey();
+                    }
+                
+                i++;
+            }
         }
-         
+        System.out.println(lista.get(0).getValue().depth);
+        System.out.println(lista.get(1).getValue().depth);
+
         return retValue;
-    } 
+    }
 
     /*
      * evaluation of the move before played
@@ -170,10 +196,10 @@ public class crace implements CXPlayer {
         int val = 0;
 
         if (move == (B.N)/2) {
-            val += 5;
+            val += 10;
         }
         else if ((move <= (B.N)/2 + 1) && (move >= (B.N)/2 - 1)) {
-            val += 2;
+            val += 5;
         }
 
         int around = countAround(B, move);
@@ -324,7 +350,7 @@ public class crace implements CXPlayer {
     }
 
     /*
-     * count how many cells in line i have before the move
+     * count how many cells in line I have before the move
      */
     private int countInLine(CXBoard B, int move){
         int count = 0;
