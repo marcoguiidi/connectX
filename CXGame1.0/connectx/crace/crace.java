@@ -183,8 +183,8 @@ public class crace implements CXPlayer {
                 i++;
             }
         }
-        System.out.println(lista.get(0).getValue().depth);
-        System.out.println(lista.get(1).getValue().depth);
+        //System.out.println(lista.get(0).getValue().depth);
+        //System.out.println(lista.get(1).getValue().depth);
 
         return retValue;
     }
