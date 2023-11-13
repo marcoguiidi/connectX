@@ -25,23 +25,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Collections;
 import java.util.Random;
-import java.util.concurrent.TimeoutException;
 
 
 
 
 public class crace implements CXPlayer {
 
-    private Map<tabDepth, Integer> hashTable;  // vengono salvate le tabelle associate alla profondità
+    private Map<CXBoard, Integer> hashTable = new HashMap<>();  // salva le tabelle che valuta !! PROBLEMA NON LA SALVA !!
     private Random rand;
-    private CXGameState myWin;      
-	private CXGameState yourWin;
 	private int  TIMEOUT;
 	private long START;
     private boolean playerA;
     private CXCellState myplayer;
-    private boolean evaluated;
-    
 
     /*
      * default empty constructor
@@ -52,13 +47,9 @@ public class crace implements CXPlayer {
     public void initPlayer(int M, int N, int K, boolean first, int timeout_in_secs) {
 		// New random seed for each game
 		rand    = new Random(System.currentTimeMillis());
-		myWin   = first ? CXGameState.WINP1 : CXGameState.WINP2;
-		yourWin = first ? CXGameState.WINP2 : CXGameState.WINP1;
         myplayer = first ? CXCellState.P1 : CXCellState.P2;
 		TIMEOUT = timeout_in_secs;
         playerA = first;
-        evaluated = false;
-        hashTable = new HashMap<>();
 	}
    
     /*
@@ -81,37 +72,47 @@ public class crace implements CXPlayer {
             long beg = System.currentTimeMillis();
 
             Integer[] moves = T.board.getAvailableColumns();
+
+            //List<Map.Entry<CXBoard, Integer>> prova = new ArrayList<>(hashTable.entrySet());
+            //if (prova.size() > 0)
+            //    System.out.println(prova.get(0).getValue());
+
+
         
             for(int move : moves){
 
                 boolean closed = false;
                 if (d > 1 && (save.get(move).val == Integer.MIN_VALUE || save.get(move).val == Integer.MAX_VALUE)) {
-                    closed = true;              
+                    closed = true;              // evito di rivalutare una mossa che so già portare a vittoria/sconfitta
                 }
                 
                 if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (95.0 / 100.0))
                     break;
 
-                if (!closed){
+                if (!closed){ // booleano che controlla se la mossa è ancora aperta
 
                     CXBoard cpy = T.board.copy();
                     GTBoard c = new GTBoard(cpy, playerA);
                     cpy.markColumn(move);
 
-                    tabDepth x = new tabDepth(c, d);
-                    //if (hashTable.get(x) == null) { // evita di rivalutare tabelle già valutate
+                    //tabDepth x = new tabDepth(c, d + 1);
+                    if (hashTable.get(cpy) == null) { // evita di rivalutare tabelle già valutate
+                        CXBoard cc = cpy.copy();
+                        //System.out.println(hashTable.get(cpy));
                         int val = alphaBeta(c, Integer.MIN_VALUE, Integer.MAX_VALUE, !maximizingPlayer, d);
 
-                        save.put(move, new valDepth(val, d));
+                        save.put(move, new valDepth(val, d)); 
 
-                        hashTable.put(x, val);  
+                        hashTable.put(cc, val);  // inserisce la tabella con il suo valore
+
+                        //System.out.println(hashTable.get(cc));
                         //System.out.print(save.get(move));
                         //System.out.print(" ");
                 
                         if (save.get(move).val == Integer.MAX_VALUE) {
                             if (maximizingPlayer) {
                                 System.out.print("\nwinning in ");
-                                System.out.print(d/2);
+                                System.out.print(d);
                                 System.out.print(" moves\n");
                                 return move;
                             }
@@ -120,7 +121,7 @@ public class crace implements CXPlayer {
                         else if (save.get(move).val == Integer.MIN_VALUE) {
                             if (!maximizingPlayer) {
                                 System.out.print("\nwinning in ");
-                                System.out.print(d/2);
+                                System.out.print(d);
                                 System.out.print(" moves\n");
                                 return move;
                             }
@@ -133,19 +134,20 @@ public class crace implements CXPlayer {
                             }
                             else save.put(move, new valDepth((save.get(move).val - pre), d));
                         }
-                    //}
+                    }
                 }
             }
-            System.out.print("\ndepth: ");
+            System.out.print("depth: ");
             System.out.print(d);
             System.out.print(", time: ");
             System.out.print(System.currentTimeMillis() - beg);
-            System.out.print("ms");
+            System.out.print("ms\n");
             //System.out.print(save);
         }
         
         System.out.print("\ndone!");
 
+        // ordinamento della lista ed estrazione mossa migliore
         List<Map.Entry<Integer, valDepth>> lista = new ArrayList<>(save.entrySet());
 
         if(maximizingPlayer) Collections.sort(lista, (entry1, entry2) -> entry2.getValue().compareTo(entry1.getValue()));
@@ -154,14 +156,16 @@ public class crace implements CXPlayer {
 
         int moves = lista.get(0).getValue().depth;
         retValue = lista.get(0).getKey();
+        int evalRet = lista.get(0).getValue().val;
         int i = 0;
 
         /*
          * cicli while che perdono in più mosse possibili, quando ogni mossa porta alla sconfitta
          */
-        if (retValue == Integer.MAX_VALUE && !maximizingPlayer) {
+        // !! DA SISTEMARE !!
+        if (evalRet == Integer.MAX_VALUE && !maximizingPlayer) {
             
-            while (lista.get(i).getValue().val == Integer.MAX_VALUE && i < lista.size()){ 
+            while (lista.get(i).getValue().val == Integer.MAX_VALUE && i < lista.size() - 1){ 
                 
                 if (lista.get(i).getValue().depth > moves){
                     moves = lista.get(i).getValue().depth;
@@ -171,9 +175,9 @@ public class crace implements CXPlayer {
             }  
         } 
 
-        else if (retValue == Integer.MIN_VALUE && maximizingPlayer) {
+        else if (evalRet == Integer.MIN_VALUE && maximizingPlayer) {
             
-            while (lista.get(i).getValue().val == Integer.MIN_VALUE && i < lista.size()){
+            while (lista.get(i).getValue().val == Integer.MIN_VALUE && i < lista.size() - 1){
                 
                 if (lista.get(i).getValue().depth > moves){
                     moves = lista.get(i).getValue().depth;
@@ -322,7 +326,6 @@ public class crace implements CXPlayer {
             else eval -= countCentral(B.board);
             
         }
-        evaluated = true;
         return eval;   
     }
 
@@ -355,7 +358,7 @@ public class crace implements CXPlayer {
     private int countInLine(CXBoard B, int move){
         int count = 0;
 
-        //count += countInRow(B, move);
+        count += countInRow(B, move);
         count += countInCol(B, move);
         count += countInPdiag(B, move);
         count += countInSDiag(B, move);
@@ -366,15 +369,15 @@ public class crace implements CXPlayer {
     /*
      * count inLine ausiliar functions
      */
-    private int countInSDiag(CXBoard b, int move) {
+    private int countInSDiag(CXBoard b, int move) {  // conta quanti gettoni ottengo in diagonale Right Bottom
         return 0;
     }
 
-    private int countInPdiag(CXBoard b, int move) {
+    private int countInPdiag(CXBoard b, int move) {  // conta quanti gettoni ottengo in diagonale Left Bottom
         return 0;
     }
 
-    private int countInCol(CXBoard b, int move) {
+    private int countInCol(CXBoard b, int move) { // conta quanti gettoni otterrei in colonna se gioco una mossa
         int count = 0;
 
         int i = b.M - 1;
@@ -398,26 +401,39 @@ public class crace implements CXPlayer {
         return count;
     }
 
-    /*private int countInRow(CXBoard b, int move) {
+    private int countInRow(CXBoard b, int move) {  // conta quanti gettoni in riga otterrei se gioco una mossa
         int count = 0;
 
+        int i = b.M - 1;
         while (b.cellState(i, move) != CXCellState.FREE && i >= 0) {
             i--;
         }
-        if (i == 0) {
+        if (i == 0) { // controllo inutile perchè la mossa è lecita
             return 0;
         }
         else{
             boolean cont = true;
-            while (cont && i < b.M) {
-                if (b.cellState(i + 1, move) != myplayer) {
+            int j = move;
+            while (j <= b.N - 1 && cont) {  // conta a destra della mossa
+                if (b.cellState(i, j) != myplayer) {
                     cont = false;
                 }
                 else count++;
+                j++;
             }
+            cont = true;
+            j = move;
+            while (j >= 0 && cont) {  // conta a sinistra della mossa
+                if (b.cellState(i, j) != myplayer) {
+                    cont = false;
+                }
+                else count++;
+                j--;
+            }
+
         }
         return count;
-    }*/
+    }
 
     /*
      * return the selected column

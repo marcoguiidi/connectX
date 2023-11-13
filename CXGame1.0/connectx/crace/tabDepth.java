@@ -1,7 +1,5 @@
 package connectx.crace;
 
-import connectx.CXBoard;
-
 public class tabDepth {
      
     public int depth;
