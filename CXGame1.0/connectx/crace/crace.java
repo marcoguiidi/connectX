@@ -1,8 +1,9 @@
 /*
  *  in connectx directory
  *  command line complile:
+ *  
  * 
- */ //  javac -cp ".." *.java */*.java
+ */ //  javac -cp ".." *.java */*.java && java -cp ".." connectx.CXGame 6 7 4 connectx.crace.crace && rm *.class */*.class 
  /*  
  *   command line execution:
  *      java -cp ".." connectx.CXGame 6 7 4 connectx.crace.crace
