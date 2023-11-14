@@ -60,8 +60,10 @@ public class crace implements CXPlayer {
         Map<Integer, valDepth> save = new HashMap<>();
         Integer[] a = T.board.getAvailableColumns();
         int retValue = a[rand.nextInt(a.length)];
-        
 
+        if (a.length == 1) {
+            return a[0];
+        }
         int d;
 
         System.out.print("\n\n running ...\n");
@@ -102,7 +104,10 @@ public class crace implements CXPlayer {
                         //System.out.println(hashTable.get(cpy));
                         int val = alphaBeta(c, Integer.MIN_VALUE, Integer.MAX_VALUE, !maximizingPlayer, d);
 
-                        save.put(move, new valDepth(val, d)); 
+                        valDepth ins = new valDepth(val, d);
+                        ins.setBool(maximizingPlayer);
+
+                        save.put(move, ins); 
 
                         hashTable.put(cc, val);  // inserisce la tabella con il suo valore
 
@@ -131,9 +136,13 @@ public class crace implements CXPlayer {
                         else{
                             int pre =  preScan(T.board, move);
                             if (maximizingPlayer) {
-                                save.put(move, new valDepth((save.get(move).val + pre), d));
+                                ins.val += pre;
+                                save.put(move, ins);
                             }
-                            else save.put(move, new valDepth((save.get(move).val - pre), d));
+                            else {
+                                ins.val -= pre;
+                                save.put(move, ins);
+                            }
                         }
                     }
                 }
@@ -151,45 +160,12 @@ public class crace implements CXPlayer {
         // ordinamento della lista ed estrazione mossa migliore
         List<Map.Entry<Integer, valDepth>> lista = new ArrayList<>(save.entrySet());
 
-        if(maximizingPlayer) Collections.sort(lista, (entry1, entry2) -> entry2.getValue().compareTo(entry1.getValue()));
+        Collections.sort(lista, (entry1, entry2) -> entry2.getValue().compareTo(entry1.getValue()));
 
-        else Collections.sort(lista, (entry1, entry2) -> entry1.getValue().compareTo(entry2.getValue()));
-
-        int moves = lista.get(0).getValue().depth;
         retValue = lista.get(0).getKey();
-        int evalRet = lista.get(0).getValue().val;
-        int i = 0;
 
-        /*
-         * cicli while che perdono in più mosse possibili, quando ogni mossa porta alla sconfitta
-         */
-        // !! DA SISTEMARE !!
-        if (evalRet == Integer.MAX_VALUE && !maximizingPlayer) {
-            
-            while (lista.get(i).getValue().val == Integer.MAX_VALUE && i < lista.size() - 1){ 
-                
-                if (lista.get(i).getValue().depth > moves){
-                    moves = lista.get(i).getValue().depth;
-                    retValue = lista.get(i).getKey();
-                }
-                i++;
-            }  
-        } 
-
-        else if (evalRet == Integer.MIN_VALUE && maximizingPlayer) {
-            
-            while (lista.get(i).getValue().val == Integer.MIN_VALUE && i < lista.size() - 1){
-                
-                if (lista.get(i).getValue().depth > moves){
-                    moves = lista.get(i).getValue().depth;
-                    retValue = lista.get(i).getKey();
-                    }
-                
-                i++;
-            }
-        }
-        //System.out.println(lista.get(0).getValue().depth);
-        //System.out.println(lista.get(1).getValue().depth);
+        System.out.println(lista.get(0).getValue().depth);
+        System.out.println(lista.get(1).getValue().depth);
 
         return retValue;
     }
