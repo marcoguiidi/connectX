@@ -32,7 +32,7 @@ import java.util.Random;
 
 public class crace implements CXPlayer {
 
-    private Map<CXBoard, Integer> hashTable = new HashMap<>();  // salva le tabelle che valuta !! PROBLEMA NON LA SALVA !!
+    private List<CXBoard> listTable = new ArrayList<>();  // salva le tabelle che valuta !! PROBLEMA NON LA SALVA !!
     private Random rand;
 	private int  TIMEOUT;
 	private long START;
@@ -72,6 +72,10 @@ public class crace implements CXPlayer {
             if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (95.0 / 100.0)){
                 break;
             }
+
+            //if (!listTable.isEmpty())
+            //    System.out.println("\nnot empty");
+
             long beg = System.currentTimeMillis();
 
             Integer[] moves = T.board.getAvailableColumns();
@@ -98,10 +102,11 @@ public class crace implements CXPlayer {
                     GTBoard c = new GTBoard(cpy, playerA);
                     cpy.markColumn(move);
 
+                    
                     //tabDepth x = new tabDepth(c, d + 1);
-                    if (hashTable.get(cpy) == null) { // evita di rivalutare tabelle già valutate
+                    if (!listTable.contains(cpy)) { // se la tabella non è presente nella lista di quelle già visitate allora la visito
                         CXBoard cc = cpy.copy();
-                        //System.out.println(hashTable.get(cpy));
+                        
                         int val = alphaBeta(c, Integer.MIN_VALUE, Integer.MAX_VALUE, !maximizingPlayer, d);
 
                         valDepth ins = new valDepth(val, d);
@@ -109,9 +114,10 @@ public class crace implements CXPlayer {
 
                         save.put(move, ins); 
 
-                        hashTable.put(cc, val);  // inserisce la tabella con il suo valore
+                        listTable.add(cc);  // inserisce la tabella con la mossa iniziale giocata
 
-                        //System.out.println(hashTable.get(cc));
+                        //if (listTable.getLast() != null)
+                        //    System.out.println("\nnot null");
                         //System.out.print(save.get(move));
                         //System.out.print(" ");
                 
@@ -145,6 +151,8 @@ public class crace implements CXPlayer {
                             }
                         }
                     }
+                    //else 
+                    //    System.out.println("\nnot null ");
                 }
             }
             System.out.print("depth: ");
@@ -486,7 +494,7 @@ public class crace implements CXPlayer {
                     break;
                 }
 
-                cpy.unmarkColumn();;
+                cpy.unmarkColumn();
 
                 if (beta <= alpha) {
                     break;
