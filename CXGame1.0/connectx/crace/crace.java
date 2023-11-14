@@ -32,7 +32,7 @@ import java.util.Random;
 
 public class crace implements CXPlayer {
 
-    private List<CXBoard> listTable = new ArrayList<>();  // salva le tabelle che valuta !! PROBLEMA NON LA SALVA !!
+    private Map<CXBoard, Integer> mapTable;  // salva le tabelle che valuta !! PROBLEMA NON LA SALVA !!
     private Random rand;
 	private int  TIMEOUT;
 	private long START;
@@ -51,6 +51,7 @@ public class crace implements CXPlayer {
         myplayer = first ? CXCellState.P1 : CXCellState.P2;
 		TIMEOUT = timeout_in_secs;
         playerA = first;
+        mapTable = new HashMap<>();
 	}
    
     /*
@@ -60,6 +61,7 @@ public class crace implements CXPlayer {
         Map<Integer, valDepth> save = new HashMap<>();
         Integer[] a = T.board.getAvailableColumns();
         int retValue = a[rand.nextInt(a.length)];
+        List<CXBoard> tables = new ArrayList<>();
 
         if (a.length == 1) {
             return a[0];
@@ -104,7 +106,7 @@ public class crace implements CXPlayer {
 
                     
                     //tabDepth x = new tabDepth(c, d + 1);
-                    if (!listTable.contains(cpy)) { // se la tabella non è presente nella lista di quelle già visitate allora la visito
+                    if (mapTable.get(cpy) == null) { // se la tabella non è presente nella lista di quelle già visitate allora la visito
                         CXBoard cc = cpy.copy();
                         
                         int val = alphaBeta(c, Integer.MIN_VALUE, Integer.MAX_VALUE, !maximizingPlayer, d);
@@ -114,7 +116,7 @@ public class crace implements CXPlayer {
 
                         save.put(move, ins); 
 
-                        listTable.add(cc);  // inserisce la tabella con la mossa iniziale giocata
+                        mapTable.put(cc, 1);  // inserisce la tabella con la mossa iniziale giocata
 
                         //if (listTable.getLast() != null)
                         //    System.out.println("\nnot null");
