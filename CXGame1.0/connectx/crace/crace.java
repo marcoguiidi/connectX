@@ -1,16 +1,7 @@
 /*
- *  in connectx directory
- *  command line complile:
- *  
+ *  in ../connectx/CXGAME1.0/connectx directory
  * 
  */ //  javac -cp ".." *.java */*.java && java -cp ".." connectx.CXGame 6 7 4 connectx.crace.crace && rm *.class */*.class 
- /*  
- *   command line execution:
- *      java -cp ".." connectx.CXGame 6 7 4 connectx.crace.crace
- *      
- *      empty package is human play
- */
-
 
  package connectx.crace;
 
@@ -61,14 +52,13 @@ public class crace implements CXPlayer {
         Map<Integer, valDepth> save = new HashMap<>();
         Integer[] a = T.board.getAvailableColumns();
         int retValue = a[rand.nextInt(a.length)];
-        List<CXBoard> tables = new ArrayList<>();
-
+     
         if (a.length == 1) {
             return a[0];
         }
         int d;
 
-        System.out.print("\n\n running ...\n");
+        System.out.print("\n running ...\n");
         for( d = 1; d <= depth; d++){
             
             if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (95.0 / 100.0)){
@@ -80,14 +70,11 @@ public class crace implements CXPlayer {
 
             long beg = System.currentTimeMillis();
 
+            
             Integer[] moves = T.board.getAvailableColumns();
 
-            //List<Map.Entry<CXBoard, Integer>> prova = new ArrayList<>(hashTable.entrySet());
-            //if (prova.size() > 0)
-            //    System.out.println(prova.get(0).getValue());
 
-
-        
+            
             for(int move : moves){
 
                 boolean closed = false;
@@ -104,57 +91,51 @@ public class crace implements CXPlayer {
                     GTBoard c = new GTBoard(cpy, playerA);
                     cpy.markColumn(move);
 
-                    
-                    //tabDepth x = new tabDepth(c, d + 1);
-                    if (mapTable.get(cpy) == null) { // se la tabella non è presente nella lista di quelle già visitate allora la visito
-                        CXBoard cc = cpy.copy();
                         
-                        int val = alphaBeta(c, Integer.MIN_VALUE, Integer.MAX_VALUE, !maximizingPlayer, d);
 
-                        valDepth ins = new valDepth(val, d);
-                        ins.setBool(maximizingPlayer);
+                     // se la tabella non è presente nella lista di quelle già visitate allora la visito
+                    CXBoard cc = cpy.copy();
+                        
+                    int val = alphaBeta(c, Integer.MIN_VALUE, Integer.MAX_VALUE, !maximizingPlayer, d);
 
-                        save.put(move, ins); 
 
-                        mapTable.put(cc, 1);  // inserisce la tabella con la mossa iniziale giocata
+                    valDepth ins = new valDepth(val, d);
+                    ins.setBool(maximizingPlayer);
 
-                        //if (listTable.getLast() != null)
-                        //    System.out.println("\nnot null");
-                        //System.out.print(save.get(move));
-                        //System.out.print(" ");
+                    save.put(move, ins); 
+
+                    mapTable.put(cc, 1);  // inserisce la tabella con la mossa iniziale giocata
+
                 
-                        if (save.get(move).val == Integer.MAX_VALUE) {
-                            if (maximizingPlayer) {
-                                System.out.print("\nwinning in ");
-                                System.out.print(d);
-                                System.out.print(" moves\n");
-                                return move;
-                            }
-                        }
-
-                        else if (save.get(move).val == Integer.MIN_VALUE) {
-                            if (!maximizingPlayer) {
-                                System.out.print("\nwinning in ");
-                                System.out.print(d);
-                                System.out.print(" moves\n");
-                                return move;
-                            }
-                        }
-
-                        else{
-                            int pre =  preScan(T.board, move);
-                            if (maximizingPlayer) {
-                                ins.val += pre;
-                                save.put(move, ins);
-                            }
-                            else {
-                                ins.val -= pre;
-                                save.put(move, ins);
-                            }
+                    if (save.get(move).val == Integer.MAX_VALUE) {
+                        if (maximizingPlayer) {
+                            System.out.print("\nwinning in ");
+                            System.out.print(d);
+                            System.out.print(" moves\n");
+                            return move;
                         }
                     }
-                    //else 
-                    //    System.out.println("\nnot null ");
+
+                    else if (save.get(move).val == Integer.MIN_VALUE) {
+                        if (!maximizingPlayer) {
+                            System.out.print("\nwinning in ");
+                            System.out.print(d);
+                            System.out.print(" moves\n");
+                            return move;
+                        }
+                    }
+
+                    else{
+                        int pre =  preScan(T.board, move);
+                        if (maximizingPlayer) {
+                            ins.val += pre;
+                            save.put(move, ins);
+                        }
+                        else {
+                            ins.val -= pre;
+                            save.put(move, ins);
+                        }
+                    }        
                 }
             }
             System.out.print("depth: ");
@@ -164,8 +145,9 @@ public class crace implements CXPlayer {
             System.out.print("ms\n");
             //System.out.print(save);
         }
+
         
-        System.out.print("\ndone!");
+        System.out.print("done!\n");
 
         // ordinamento della lista ed estrazione mossa migliore
         List<Map.Entry<Integer, valDepth>> lista = new ArrayList<>(save.entrySet());
@@ -461,10 +443,12 @@ public class crace implements CXPlayer {
                     T.eval = evaluate(T);
                     break;
                 }
-                
-                T.eval = Math.max (T.eval, alphaBeta(c, alpha, beta, false, depth - 1));
-                alpha = Math.max(T.eval, alpha);
 
+                if (mapTable.get(cpy) == null) {
+                    T.eval = Math.max (T.eval, alphaBeta(c, alpha, beta, false, depth - 1));
+                    alpha = Math.max(T.eval, alpha);
+                }
+                
                 if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (96.0 / 100.0)){
                     break;
                 }
@@ -489,13 +473,16 @@ public class crace implements CXPlayer {
                     T.eval = evaluate(T);
                     break;
                 }
-                T.eval = Math.min(T.eval, alphaBeta(c, alpha, beta, true, depth - 1));
-                beta = Math.min(T.eval, beta);
+
+                if (mapTable.get(cpy) == null){
+                    T.eval = Math.min(T.eval, alphaBeta(c, alpha, beta, true, depth - 1));
+                    beta = Math.min(T.eval, beta);
+                }
 
                 if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (96.0 / 100.0)){
                     break;
                 }
-
+                
                 cpy.unmarkColumn();
 
                 if (beta <= alpha) {
