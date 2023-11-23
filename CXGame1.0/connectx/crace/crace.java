@@ -13,6 +13,7 @@ import connectx.CXGameState;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Collections;
@@ -22,8 +23,8 @@ import java.util.Random;
 
 
 public class crace implements CXPlayer {
-
-    private Map<CXBoard, Integer> mapTable;  // salva le tabelle che valuta !! PROBLEMA NON LA SALVA !!
+ 
+    private Hashtable<CXBoard, Integer> ht = new Hashtable<>(1000000);
     private Random rand;
 	private int  TIMEOUT;
 	private long START;
@@ -42,7 +43,6 @@ public class crace implements CXPlayer {
         myplayer = first ? CXCellState.P1 : CXCellState.P2;
 		TIMEOUT = timeout_in_secs;
         playerA = first;
-        mapTable = new HashMap<>();
 	}
    
     /*
@@ -91,51 +91,56 @@ public class crace implements CXPlayer {
                     GTBoard c = new GTBoard(cpy, playerA);
                     cpy.markColumn(move);
 
+                    if (ht.get(cpy) == 1) {
                         
-
-                     // se la tabella non è presente nella lista di quelle già visitate allora la visito
-                    CXBoard cc = cpy.copy();
-                        
-                    int val = alphaBeta(c, Integer.MIN_VALUE, Integer.MAX_VALUE, !maximizingPlayer, d);
-
-
-                    valDepth ins = new valDepth(val, d);
-                    ins.setBool(maximizingPlayer);
-
-                    save.put(move, ins); 
-
-                    mapTable.put(cc, 1);  // inserisce la tabella con la mossa iniziale giocata
-
-                
-                    if (save.get(move).val == Integer.MAX_VALUE) {
-                        if (maximizingPlayer) {
-                            System.out.print("\nwinning in ");
-                            System.out.print(d);
-                            System.out.print(" moves\n");
-                            return move;
-                        }
-                    }
-
-                    else if (save.get(move).val == Integer.MIN_VALUE) {
-                        if (!maximizingPlayer) {
-                            System.out.print("\nwinning in ");
-                            System.out.print(d);
-                            System.out.print(" moves\n");
-                            return move;
-                        }
                     }
 
                     else{
-                        int pre =  preScan(T.board, move);
-                        if (maximizingPlayer) {
-                            ins.val += pre;
-                            save.put(move, ins);
+
+                     // se la tabella non è presente nella lista di quelle già visitate allora la visito
+                        CXBoard cc = cpy.copy();
+                        
+                        int val = alphaBeta(c, Integer.MIN_VALUE, Integer.MAX_VALUE, !maximizingPlayer, d);
+
+
+                        valDepth ins = new valDepth(val, d);
+                        ins.setBool(maximizingPlayer);
+
+                        save.put(move, ins); 
+
+                        ht.put(cc, 1);  // inserisce la tabella con la mossa iniziale giocata
+
+                
+                        if (save.get(move).val == Integer.MAX_VALUE) {
+                            if (maximizingPlayer) {
+                                System.out.print("\nwinning in ");
+                                System.out.print(d);
+                                System.out.print(" moves\n");
+                                return move;
+                            }
                         }
-                        else {
-                            ins.val -= pre;
-                            save.put(move, ins);
+
+                        else if (save.get(move).val == Integer.MIN_VALUE) {
+                            if (!maximizingPlayer) {
+                                System.out.print("\nwinning in ");
+                                System.out.print(d);
+                                System.out.print(" moves\n");
+                                return move;
+                            }
                         }
-                    }        
+
+                        else{
+                            int pre =  preScan(T.board, move);
+                            if (maximizingPlayer) {
+                                ins.val += pre;
+                                save.put(move, ins);
+                            }
+                            else {
+                                ins.val -= pre;
+                                save.put(move, ins);
+                            }
+                        }  
+                    }      
                 }
             }
             System.out.print("depth: ");
@@ -444,10 +449,10 @@ public class crace implements CXPlayer {
                     break;
                 }
 
-                if (mapTable.get(cpy) == null) {
-                    T.eval = Math.max (T.eval, alphaBeta(c, alpha, beta, false, depth - 1));
-                    alpha = Math.max(T.eval, alpha);
-                }
+                // if (ht.get(cpy) == null) {
+                //     T.eval = Math.max (T.eval, alphaBeta(c, alpha, beta, false, depth - 1));
+                //     alpha = Math.max(T.eval, alpha);
+                // }
                 
                 if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (96.0 / 100.0)){
                     break;
@@ -474,10 +479,10 @@ public class crace implements CXPlayer {
                     break;
                 }
 
-                if (mapTable.get(cpy) == null){
-                    T.eval = Math.min(T.eval, alphaBeta(c, alpha, beta, true, depth - 1));
-                    beta = Math.min(T.eval, beta);
-                }
+                // if (ht.get(cpy) == null){
+                //     T.eval = Math.min(T.eval, alphaBeta(c, alpha, beta, true, depth - 1));
+                //     beta = Math.min(T.eval, beta);
+                // }
 
                 if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (96.0 / 100.0)){
                     break;
