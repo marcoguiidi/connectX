@@ -91,11 +91,9 @@ public class crace implements CXPlayer {
                     GTBoard c = new GTBoard(cpy, playerA);
                     cpy.markColumn(move);
 
-                    if (ht.get(cpy) == 1) {
-                        
-                    }
+                    
 
-                    else{
+                    if (ht.get(cpy) != null){
 
                      // se la tabella non è presente nella lista di quelle già visitate allora la visito
                         CXBoard cc = cpy.copy();
