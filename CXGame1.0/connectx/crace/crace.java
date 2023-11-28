@@ -51,17 +51,18 @@ public class crace implements CXPlayer {
         myplayer = first ? CXCellState.P1 : CXCellState.P2;
 		TIMEOUT = timeout_in_secs;
         playerA = first;
-        mapTable = new HashMap<>();
+        mapTable = new HashMap<>(100000);
 	}
    
     /*
      * iterative deepening algorithm
      */
     private int iterativeDeepening(GTBoard T, int depth, boolean maximizingPlayer){
-        Map<Integer, valDepth> save = new HashMap<>();
+        Map<Integer, valDepth> save = new HashMap<>();  // hashMap in cui salvare i valori delle mosse
         Integer[] a = T.board.getAvailableColumns();
-        int retValue = a[rand.nextInt(a.length)];
-        if (a.length == 1) {
+        int retValue = a[rand.nextInt(a.length)];  // colonna casuale nelle mosse disponibili
+
+        if (a.length == 1) {   // se c'è solo una mossa, allora gioco quella
             return a[0];
         }
         int d;
@@ -73,19 +74,10 @@ public class crace implements CXPlayer {
                 break;
             }
 
-            //if (!listTable.isEmpty())
-            //    System.out.println("\nnot empty");
-
-            long beg = System.currentTimeMillis();
+            long beg = System.currentTimeMillis();  // funzione per calcolare il tempo di ogni profondità
 
             Integer[] moves = T.board.getAvailableColumns();
 
-            //List<Map.Entry<CXBoard, Integer>> prova = new ArrayList<>(hashTable.entrySet());
-            //if (prova.size() > 0)
-            //    System.out.println(prova.get(0).getValue());
-
-
-        
             for(int move : moves){
 
                 boolean closed = false;
@@ -102,25 +94,21 @@ public class crace implements CXPlayer {
                     GTBoard c = new GTBoard(cpy, playerA);
                     cpy.markColumn(move);
 
-                    
-                    //tabDepth x = new tabDepth(c, d + 1);
-                    if (mapTable.get(cpy) == null) { // se la tabella non è presente nella lista di quelle già visitate allora la visito
-                        CXBoard cc = cpy.copy();
+                    if (!mapTable.containsKey(cpy)) { // se la tabella non è presente nella lista di quelle già visitate allora la visito
+                        CXBoard cc = cpy.copy(); // salvo la tabella iniziale per aggiungerla alla hashMap di quelle già valutate
                         
                         int val = alphaBeta(c, Integer.MIN_VALUE, Integer.MAX_VALUE, !maximizingPlayer, d);
 
                         valDepth ins = new valDepth(val, d);
-                        ins.setBool(maximizingPlayer);
+                        ins.setBool(maximizingPlayer);   // funzione utile all'ordinamento delle mosse per la scelta della mossa migliore
 
-                        save.put(move, ins); 
+                        save.put(move, ins);
 
                         mapTable.put(cc, 1);  // inserisce la tabella con la mossa iniziale giocata
 
-                        //if (listTable.getLast() != null)
-                        //    System.out.println("\nnot null");
-                        //System.out.print(save.get(move));
-                        //System.out.print(" ");
-                
+                        /*
+                         * controlli per restituire la mossa vincente
+                         */
                         if (save.get(move).val == Integer.MAX_VALUE) {
                             if (maximizingPlayer) {
                                 System.out.print("\nwinning in ");
@@ -139,6 +127,9 @@ public class crace implements CXPlayer {
                             }
                         }
 
+                        /*
+                         * altrimenti modifichiamo il valore con le euristiche
+                         */
                         else{
                             int pre =  preScan(T.board, move);
                             if (maximizingPlayer) {
@@ -151,29 +142,26 @@ public class crace implements CXPlayer {
                             }
                         }
                     }
-                    //else 
-                    //    System.out.println("\nnot null ");
                 }
             }
+            /*
+             * stampa delle informazioni sulla profondità
+             */
             System.out.print("depth: ");
             System.out.print(d);
             System.out.print(", time: ");
             System.out.print(System.currentTimeMillis() - beg);
             System.out.print("ms\n");
-            //System.out.print(save);
         }
         
         System.out.print("\ndone!");
 
-        // ordinamento della lista ed estrazione mossa migliore
+        /*
+         * ordinamento delle mosse e scelta mossa migliore
+         */
         List<Map.Entry<Integer, valDepth>> lista = new ArrayList<>(save.entrySet());
-
         Collections.sort(lista, (entry1, entry2) -> entry2.getValue().compareTo(entry1.getValue()));
-
         retValue = lista.get(0).getKey();
-
-        //System.out.println(lista.get(0).getValue().depth);
-        //System.out.println(lista.get(1).getValue().depth);
 
         return retValue;
     }
@@ -207,13 +195,6 @@ public class crace implements CXPlayer {
         cpy.markColumn(move);
 
         CXCell cell = cpy.getLastMove();
-
-        /*
-        System.out.print("\nrow: ");
-        System.out.print(cell.i);
-        System.out.print(", col: ");
-        System.out.print(cell.j);
-        */
 
         if (cell.i > 0 && cell.i < B.M - 1){
             for (int i = cell.i - 1; i <= cell.i + 1; i++){
@@ -459,6 +440,10 @@ public class crace implements CXPlayer {
                     T.eval = evaluate(T);
                     break;
                 }
+
+                // if (!mapTable.containsKey(c.board)) {
+                //     mapTable.put(c.board, 1);
+                // }
                 
                 T.eval = Math.max (T.eval, alphaBeta(c, alpha, beta, false, depth - 1));
                 alpha = Math.max(T.eval, alpha);
@@ -487,6 +472,11 @@ public class crace implements CXPlayer {
                     T.eval = evaluate(T);
                     break;
                 }
+
+                // if (!mapTable.containsKey(c.board)) {
+                //     mapTable.put(c.board, 1);
+                // }
+            
                 T.eval = Math.min(T.eval, alphaBeta(c, alpha, beta, true, depth - 1));
                 beta = Math.min(T.eval, beta);
 
