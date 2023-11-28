@@ -285,13 +285,6 @@ public class crace implements CXPlayer {
         else if (B.board.gameState() == CXGameState.WINP2) {
             return Integer.MIN_VALUE;
         }
-        else{
-            if (playerA) {
-                eval += countCentral(B.board);
-            }
-            else eval -= countCentral(B.board);
-            
-        }
         return eval;   
     }
 
@@ -308,18 +301,13 @@ public class crace implements CXPlayer {
                   if (B.cellState(i, j) == myplayer) {
                      count++;
                   } 
-                  /*
-                  else if (B.cellState(i, j) != CXCellState.FREE) {
-                     count--;   
-                  }
-                  */
             }
         }
         return count;
     }
 
     /*
-     * count how many cells in line I have before the move
+     * count how many cells in line i have before the move
      */
     private int countInLine(CXBoard B, int move){
         int count = 0;
@@ -333,7 +321,7 @@ public class crace implements CXPlayer {
     }
 
     /*
-     * count inLine ausiliar functions
+     * countInLine ausiliar functions
      */
     private int countInSDiag(CXBoard b, int move) {  // conta quanti gettoni ottengo in diagonale Right Bottom
         return 0;
