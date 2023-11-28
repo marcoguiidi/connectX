@@ -61,8 +61,6 @@ public class crace implements CXPlayer {
         Map<Integer, valDepth> save = new HashMap<>();
         Integer[] a = T.board.getAvailableColumns();
         int retValue = a[rand.nextInt(a.length)];
-        List<CXBoard> tables = new ArrayList<>();
-
         if (a.length == 1) {
             return a[0];
         }
