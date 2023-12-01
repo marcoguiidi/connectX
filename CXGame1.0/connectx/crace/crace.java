@@ -22,6 +22,7 @@ import connectx.CXGameState;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Collections;
@@ -51,7 +52,7 @@ public class crace implements CXPlayer {
         myplayer = first ? CXCellState.P1 : CXCellState.P2;
 		TIMEOUT = timeout_in_secs;
         playerA = first;
-        mapTable = new HashMap<>(100000);
+        mapTable = new Hashtable<>(1000000);
 	}
    
     /*
@@ -94,7 +95,10 @@ public class crace implements CXPlayer {
                     GTBoard c = new GTBoard(cpy, playerA);
                     cpy.markColumn(move);
 
-                    if (!mapTable.containsKey(cpy)) { // se la tabella non è presente nella lista di quelle già visitate allora la visito
+                    if (mapTable.containsKey(cpy)) { // non entra mai nel ciclo
+                        System.out.println("già valutata");
+                    }
+                    else { // se la tabella non è presente nella lista di quelle già visitate allora la visito
                         CXBoard cc = cpy.copy(); // salvo la tabella iniziale per aggiungerla alla hashMap di quelle già valutate
                         
                         int val = alphaBeta(c, Integer.MIN_VALUE, Integer.MAX_VALUE, !maximizingPlayer, d);
