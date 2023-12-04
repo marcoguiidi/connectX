@@ -33,7 +33,7 @@ import java.util.Random;
 
 public class crace implements CXPlayer {
 
-    private Map<CXBoard, Integer> mapTable;  // salva le tabelle che valuta !! PROBLEMA NON LA SALVA !!
+    private Map<Integer, Integer> mapTable;  // salva le tabelle che valuta !! PROBLEMA NON LA SALVA !!
     private Random rand;
 	private int  TIMEOUT;
 	private long START;
@@ -57,6 +57,8 @@ public class crace implements CXPlayer {
    
     /*
      * iterative deepening algorithm
+     * 
+     *  @return: best evaluated move 
      */
     private int iterativeDeepening(GTBoard T, int depth, boolean maximizingPlayer){
         Map<Integer, valDepth> save = new HashMap<>();  // hashMap in cui salvare i valori delle mosse
@@ -95,9 +97,9 @@ public class crace implements CXPlayer {
                     GTBoard c = new GTBoard(cpy, playerA);
                     cpy.markColumn(move);
 
-                    if (mapTable.containsKey(cpy)) { // non entra mai nel ciclo
-                        System.out.println("già valutata");
-                    }
+                    if (mapTable.containsKey(board2nr(cpy)) && d > 2) { // non entra mai nel ciclo
+                         System.out.println("già valutata");
+                     }
                     else { // se la tabella non è presente nella lista di quelle già visitate allora la visito
                         CXBoard cc = cpy.copy(); // salvo la tabella iniziale per aggiungerla alla hashMap di quelle già valutate
                         
@@ -108,7 +110,7 @@ public class crace implements CXPlayer {
 
                         save.put(move, ins);
 
-                        mapTable.put(cc, 1);  // inserisce la tabella con la mossa iniziale giocata
+                        //mapTable.put(board2nr(cc), 1);  // inserisce la tabella con la mossa iniziale giocata
 
                         /*
                          * controlli per restituire la mossa vincente
@@ -172,6 +174,8 @@ public class crace implements CXPlayer {
 
     /*
      * evaluation of the move before played
+     * 
+     * @return: euristic evaluation
      */
     private int preScan(CXBoard B, int move){
         int val = 0;
@@ -280,6 +284,8 @@ public class crace implements CXPlayer {
 
     /*
      * evaluate the current board
+     * 
+     * @return: eval of the board
      */
     private int evaluate(GTBoard B){
         int eval = 0;
@@ -414,9 +420,12 @@ public class crace implements CXPlayer {
      
     /*
      * alphaBeta pruning algorithm
+     * 
+     * @return: eval of the board
      */
     private Integer alphaBeta(GTBoard T, int alpha, int beta, boolean maximizingPlayer, int depth) {
         if (T.board.gameState() != CXGameState.OPEN || T.board.getAvailableColumns().length == 0 || depth == 0) {
+            mapTable.put(board2nr(T.board), 1);
             return evaluate(T);
         }
         
@@ -484,6 +493,33 @@ public class crace implements CXPlayer {
             }
             return T.eval;
         }
+    }
+
+    /*
+     * funzione che associa ad ogni board un numero
+     */
+    private int board2nr(CXBoard B){
+        int eval = 0;
+        for(int i = 0; i < B.N; i++){
+            eval += Math.pow(colCount(B, i), i);
+        }
+        return eval;
+    }
+
+    /*
+     * funzione che conta quante celle sono mie nella colonna col
+     */
+    private int colCount(CXBoard B, int col){
+        int eval = 0;
+        int i = B.M - 1;
+        CXCellState state;
+        while (i >= 0 && ((state = B.cellState(i, col)) != CXCellState.FREE)){
+            if (state == myplayer) {
+                eval ++;
+            }
+            i--;
+        }
+        return eval;
     }
 
     /*
