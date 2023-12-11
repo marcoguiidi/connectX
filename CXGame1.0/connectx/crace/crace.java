@@ -80,8 +80,13 @@ public class crace implements CXPlayer {
             long beg = System.currentTimeMillis();  // funzione per calcolare il tempo di ogni profondità
 
             Integer[] moves = T.board.getAvailableColumns();
+            Integer[] mvs = new Integer[moves.length];
+            
+            for(int i = 0; i < moves.length; i++){
+                mvs[i] = moves.length/2 + (1-2*(i%2))*(i+1)/2; // initialize the column exploration order, starting with center columns
+            }
 
-            for(int move : moves){
+            for(int move : mvs){
 
                 boolean closed = false;
                 if (d > 1 && (save.get(move).val == Integer.MIN_VALUE || save.get(move).val == Integer.MAX_VALUE)) {
@@ -97,9 +102,6 @@ public class crace implements CXPlayer {
                     GTBoard c = new GTBoard(cpy, playerA);
                     cpy.markColumn(move);
 
-                    // if (mapTable.containsKey(board2nr(cpy)) && d > 2) { // non entra mai nel ciclo
-                    //      System.out.println("già valutata");
-                    //  }
                     if (true) { // se la tabella non è presente nella lista di quelle già visitate allora la visito
                         CXBoard cc = cpy.copy(); // salvo la tabella iniziale per aggiungerla alla hashMap di quelle già valutate
                         
@@ -425,7 +427,6 @@ public class crace implements CXPlayer {
      */
     private Integer alphaBeta(GTBoard T, int alpha, int beta, boolean maximizingPlayer, int depth) {
         if (T.board.gameState() != CXGameState.OPEN || T.board.getAvailableColumns().length == 0 || depth == 0) {
-            //mapTable.put(board2nr(T.board), 1);
             return evaluate(T);
         }
         
@@ -441,10 +442,6 @@ public class crace implements CXPlayer {
                     T.eval = evaluate(T);
                     break;
                 }
-
-                // if (!mapTable.containsKey(c.board)) {
-                //     mapTable.put(c.board, 1);
-                // }
                 
                 T.eval = Math.max (T.eval, alphaBeta(c, alpha, beta, false, depth - 1));
                 alpha = Math.max(T.eval, alpha);
@@ -473,10 +470,6 @@ public class crace implements CXPlayer {
                     T.eval = evaluate(T);
                     break;
                 }
-
-                // if (!mapTable.containsKey(c.board)) {
-                //     mapTable.put(c.board, 1);
-                // }
             
                 T.eval = Math.min(T.eval, alphaBeta(c, alpha, beta, true, depth - 1));
                 beta = Math.min(T.eval, beta);
@@ -493,17 +486,6 @@ public class crace implements CXPlayer {
             }
             return T.eval;
         }
-    }
-
-    /*
-     * funzione che associa ad ogni board un numero
-     */
-    private int board2nr(CXBoard B){
-        int eval = 0;
-        for(int i = 0; i < B.N; i++){
-            eval += Math.pow(colCount(B, i), i);
-        }
-        return eval;
     }
 
     /*
