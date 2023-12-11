@@ -80,16 +80,11 @@ public class crace implements CXPlayer {
             long beg = System.currentTimeMillis();  // funzione per calcolare il tempo di ogni profondità
 
             Integer[] moves = T.board.getAvailableColumns();
-            Integer[] mvs = new Integer[moves.length];
-            
-            for(int i = 0; i < moves.length; i++){
-                mvs[i] = moves.length/2 + (1-2*(i%2))*(i+1)/2; // initialize the column exploration order, starting with center columns
-            }
 
-            for(int move : mvs){
-
+            for(int move : moves){
+                
                 boolean closed = false;
-                if (d > 1 && (save.get(move).val == Integer.MIN_VALUE || save.get(move).val == Integer.MAX_VALUE)) {
+                if (d > 1 && (save.get(move).val == Integer.MIN_VALUE || save.get(move).val == Integer.MAX_VALUE) || T.board.fullColumn(move)) {
                     closed = true;              // evito di rivalutare una mossa che so già portare a vittoria/sconfitta
                 }
                 
@@ -102,8 +97,7 @@ public class crace implements CXPlayer {
                     GTBoard c = new GTBoard(cpy, playerA);
                     cpy.markColumn(move);
 
-                    if (true) { // se la tabella non è presente nella lista di quelle già visitate allora la visito
-                        CXBoard cc = cpy.copy(); // salvo la tabella iniziale per aggiungerla alla hashMap di quelle già valutate
+                    if (true) { // se la tabella non è presente nella lista di quelle già visitate allora la visito // salvo la tabella iniziale per aggiungerla alla hashMap di quelle già valutate
                         
                         int val = alphaBeta(c, Integer.MIN_VALUE, Integer.MAX_VALUE, !maximizingPlayer, d);
 
@@ -153,7 +147,7 @@ public class crace implements CXPlayer {
                 }
             }
             /*
-             * stampa delle informazioni sulla profondità
+             * stampa delle informazioni sul tempo di visita
              */
             System.out.print("depth: ");
             System.out.print(d);
@@ -432,6 +426,7 @@ public class crace implements CXPlayer {
         
         else if (maximizingPlayer) {
             T.eval = Integer.MIN_VALUE;
+
             for (int move : T.board.getAvailableColumns()) {
 
                 CXBoard cpy = T.board.copy();
@@ -460,6 +455,7 @@ public class crace implements CXPlayer {
         }
         else{
             T.eval = Integer.MAX_VALUE;
+            
             for (int move : T.board.getAvailableColumns()) {
 
                 CXBoard cpy = T.board.copy();
