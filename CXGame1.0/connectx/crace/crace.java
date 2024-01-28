@@ -33,7 +33,6 @@ import java.util.Random;
 
 public class crace implements CXPlayer {
 
-    private Map<Integer, Integer> mapTable;  // salva le tabelle che valuta !! PROBLEMA NON LA SALVA !!
     private Random rand;
 	private int  TIMEOUT;
 	private long START;
@@ -52,7 +51,6 @@ public class crace implements CXPlayer {
         myplayer = first ? CXCellState.P1 : CXCellState.P2;
 		TIMEOUT = timeout_in_secs;
         playerA = first;
-        mapTable = new Hashtable<>(1000000);
 	}
    
     /*
@@ -320,8 +318,6 @@ public class crace implements CXPlayer {
 
         count += countInRow(B, move);
         count += countInCol(B, move);
-        count += countInPdiag(B, move);
-        count += countInSDiag(B, move);
 
         return count;
     }
@@ -329,14 +325,6 @@ public class crace implements CXPlayer {
     /*
      * countInLine ausiliar functions
      */
-    private int countInSDiag(CXBoard b, int move) {  // conta quanti gettoni ottengo in diagonale Right Bottom
-        return 0;
-    }
-
-    private int countInPdiag(CXBoard b, int move) {  // conta quanti gettoni ottengo in diagonale Left Bottom
-        return 0;
-    }
-
     private int countInCol(CXBoard b, int move) { // conta quanti gettoni otterrei in colonna se gioco una mossa
         int count = 0;
 
