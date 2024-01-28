@@ -1,6 +1,9 @@
 package connectx.crace;
 
-public class valDepth implements Comparable<valDepth>{
+/*
+ * classe di dato utilizzata per ordinare le mosse e restituire la mossa migliore calcolata
+ */
+public class valDepth implements Comparable<valDepth>{   
     
     public int val;
     public int depth;

@@ -4,12 +4,7 @@
  *  
  * 
  */ //  javac -cp ".." *.java */*.java && java -cp ".." connectx.CXGame 6 7 4 connectx.crace.crace && rm *.class */*.class 
- /*  
- *   command line execution:
- *      java -cp ".." connectx.CXGame 6 7 4 connectx.crace.crace
- *      
- *      empty package is human play
- */
+ 
 
 
  package connectx.crace;
@@ -70,11 +65,11 @@ public class crace implements CXPlayer {
         System.out.print("\n\n running ...\n");
         for( d = 1; d <= depth; d++){
             
-            if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (95.0 / 100.0)){
+            if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (95.0 / 100.0)){ 
                 break;
             }
 
-            long beg = System.currentTimeMillis();  // funzione per calcolare il tempo di ogni profondità
+            long beg = System.currentTimeMillis();  // per calcolare il tempo di ogni profondità
 
             Integer[] moves = T.board.getAvailableColumns();
 
@@ -91,19 +86,17 @@ public class crace implements CXPlayer {
                 if (!closed){ // booleano che controlla se la mossa è ancora aperta
 
                     CXBoard cpy = T.board.copy();
-                    GTBoard c = new GTBoard(cpy, playerA);
+                    GTBoard c = new GTBoard(cpy, playerA);  // creo la GTBoard associata
                     cpy.markColumn(move);
 
                     if (true) { // se la tabella non è presente nella lista di quelle già visitate allora la visito // salvo la tabella iniziale per aggiungerla alla hashMap di quelle già valutate
                         
-                        int val = alphaBeta(c, Integer.MIN_VALUE, Integer.MAX_VALUE, !maximizingPlayer, d);
+                        int val = alphaBeta(c, Integer.MIN_VALUE, Integer.MAX_VALUE, !maximizingPlayer, d); // applico l'algoritmo alphabeta
 
                         valDepth ins = new valDepth(val, d);
                         ins.setBool(maximizingPlayer);   // funzione utile all'ordinamento delle mosse per la scelta della mossa migliore
 
-                        save.put(move, ins);
-
-                        //mapTable.put(board2nr(cc), 1);  // inserisce la tabella con la mossa iniziale giocata
+                        save.put(move, ins); // inserisco la mossa nella mia Hashmap
 
                         /*
                          * controlli per restituire la mossa vincente

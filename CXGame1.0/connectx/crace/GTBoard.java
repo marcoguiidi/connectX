@@ -4,7 +4,9 @@ package connectx.crace;
 
 import connectx.CXBoard;
 
-
+/*
+ * classe di dato che associa ad ogni Board una valutazione intera
+ */
 public class GTBoard{
     public int eval;
     public CXBoard board;
